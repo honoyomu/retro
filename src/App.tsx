@@ -94,11 +94,25 @@ function App() {
             users!comments_user_id_fkey (nickname)
           ),
           users!retro_items_created_by_fkey (nickname)
-        `)
-        .order('created_at', { ascending: false });
+        `);
 
       if (error) throw error;
-      setItems(data || []);
+      
+      // Sort items by number of votes (descending), then by created_at (descending) as tiebreaker
+      const sortedItems = (data || []).sort((a, b) => {
+        const votesA = a.votes?.length || 0;
+        const votesB = b.votes?.length || 0;
+        
+        // First sort by votes (descending)
+        if (votesB !== votesA) {
+          return votesB - votesA;
+        }
+        
+        // If votes are equal, sort by created_at (descending)
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      
+      setItems(sortedItems);
     } catch (error: any) {
       console.error('Error fetching items:', error);
       const errorMessage = error?.message || error?.error?.message || 'Failed to load items.';
